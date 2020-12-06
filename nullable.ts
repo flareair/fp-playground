@@ -1,7 +1,7 @@
 import { IO } from "fp-ts/lib/IO";
-import { pipe } from "fp-ts/lib/function";
+import { pipe, flow } from "fp-ts/lib/function";
 import * as A from "fp-ts/lib/Array";
-import { map, fromNullable, fold, none, flatten } from "fp-ts/lib/Option";
+import { map, fromNullable, fold, flatten, chain } from "fp-ts/lib/Option";
 
 const log = (val: unknown): IO<void> => () => console.log(val);
 
@@ -10,6 +10,20 @@ const getElementByIndex = <T extends unknown>(index: number) => (
 ) => {
   return fromNullable<T>(arr[index]);
 };
+
+const logProp = (obj: any) =>
+  pipe(
+    obj,
+    fromNullable,
+    map(({ bar }) => bar),
+    map(
+      flow(
+        fromNullable,
+        map(({ baz }) => baz)
+      )
+    ),
+    fold(() => log("Foo is not defined"), log)
+  );
 
 function iterateArray() {
   const indexes: number[] = [0, 2, 4];
@@ -21,6 +35,8 @@ function iterateArray() {
       return getElementByIndex<string>(index)(data);
     })
   );
+
+  log(results);
 }
 
 iterateArray();
@@ -32,22 +48,28 @@ function test() {
     },
   };
 
-  const logProp = (obj: unknown) => pipe(
-    obj,
-    fromNullable,
-    map(({ bar }) => fromNullable(bar)),
-    flatten,
-    fold(() => log("Foo is undefined"), log)
-  );
+  logProp(foo)();
 
-  const logFooProp = logProp(foo)
-  logFooProp()
+  logProp({ bar: { a: 123 } })();
 
-  const logNoObj = logProp(undefined)
-  logNoObj()
+  logProp(undefined)();
 
-  const logUndefProp = logProp({})
-  logUndefProp()
+  logProp({})();
 }
 
 test();
+
+function chainTest() {
+  const result = chain((x) => {
+    return fromNullable(x);
+  })(fromNullable({ a: 2 }));
+
+  // both unfold the value from container
+  // chain does not wrap result in option automatically
+  log(map((x: number) => x - 1)(fromNullable(null)))();
+  log(chain((x: any) => fromNullable(x.a))(fromNullable(null)))();
+
+  log(result)();
+}
+
+// chainTest();
