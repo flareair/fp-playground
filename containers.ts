@@ -13,8 +13,8 @@ export class Maybe<T> {
         return value === null || value === undefined
     }
 
-    map<B>(mapFn: (val: T) => B) {
-        return this.isNothing(this.$value) ? this : Maybe.of<B>(mapFn(this.$value))
+    map<B>(mapFn: (val: T) => B): Maybe<B | T> {
+        return this.isNothing(this.$value) ? Maybe.of(this.$value) : Maybe.of(mapFn(this.$value))
     }
 
     inspect() {

@@ -8,7 +8,7 @@ const noNumbers = (input: string): boolean => !/\d/.test(input);
 
 type Validator = (input: string) => boolean
 
-const createValidator = (...validators: Validator[]) => (input) => {
+const createValidator = (...validators: Validator[]) => (input: any) => {
     return pipe(
         input,
         fromNullable,
